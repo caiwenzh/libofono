@@ -1,0 +1,10 @@
+To test libofono with simulator, please start ofono and phonesim as following:
+
+Steps:
+	(1) change phonesim.conf, remove the commented lines
+	(2) make and install ofono
+	(3) sudo ofonod -nd &
+	(4) phonesim -p 12345 -gui src/default.xml
+	(5) test/enable-modem /phonesim
+
+Note: Part of features can't test with simulator.
