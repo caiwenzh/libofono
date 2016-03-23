@@ -20,6 +20,11 @@
 #include "common.h"
 #include "log.h"
 
+struct set_context_interm_info {
+  char *path;
+  struct pdp_context context;
+};
+
 static const char *_context_type_to_str(enum context_type type)
 {
   switch (type) {
@@ -75,8 +80,8 @@ static const char *_context_ip_type_to_str(enum ip_protocol protocol)
   }
 }
 
-static void _on_response_add_context(GObject *obj,
-    GAsyncResult *result, gpointer user_data)
+static void _on_response_add_context(GObject *obj, GAsyncResult *result,
+      gpointer user_data)
 {
   TResult ret;
   GVariant *resp;
@@ -133,61 +138,136 @@ EXPORT_API void ofono_connman_remove_context(struct ofono_modem *modem,
       on_response_common, cbd);
 }
 
+static void _on_response_set_context(GObject *obj, GAsyncResult *result,
+    gpointer user_data)
+{
+  TResult ret;
+  GVariant *dbus_result, *var, *val;
+  GError *error = NULL;
+  struct interm_response_cb_data *icbd = user_data;
+  struct response_cb_data *cbd = icbd->cbd;
+  struct set_context_interm_info *iinfo = icbd->user_data;
+
+  dbus_result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(obj), result,
+       &error);
+  g_variant_unref(dbus_result);
+
+  ret = ofono_error_parse(error);
+  if (error)
+    g_error_free(error);
+  if (ret != TAPI_RESULT_OK)
+    goto done;
+
+  if (iinfo->context.apn != NULL) {
+    tapi_debug("APN: %s", iinfo->context.apn);
+    var = g_variant_new_string(iinfo->context.apn);
+    val = g_variant_new("(sv)", "AccessPointName", var);
+    g_dbus_connection_call(icbd->modem->conn, OFONO_SERVICE, iinfo->path,
+        OFONO_CONTEXT_IFACE, "SetProperty", val, NULL, G_DBUS_CALL_FLAGS_NONE,
+        -1, NULL, _on_response_set_context, icbd);
+    g_free(iinfo->context.apn);
+    iinfo->context.apn = NULL;
+    return;
+  }
+
+  if (iinfo->context.user_name != NULL) {
+    tapi_debug("User: %s", iinfo->context.user_name);
+    var = g_variant_new_string(iinfo->context.user_name);
+    val = g_variant_new("(sv)", "Username", var);
+    g_dbus_connection_call(icbd->modem->conn, OFONO_SERVICE, iinfo->path,
+        OFONO_CONTEXT_IFACE, "SetProperty", val, NULL, G_DBUS_CALL_FLAGS_NONE,
+        -1, NULL, _on_response_set_context, icbd);
+    g_free(iinfo->context.user_name);
+    iinfo->context.user_name = NULL;
+    return;
+  }
+
+  if (iinfo->context.pwd != NULL) {
+    tapi_debug("Password: %s", iinfo->context.pwd);
+    var = g_variant_new_string(iinfo->context.pwd);
+    val = g_variant_new("(sv)", "Password", var);
+    g_dbus_connection_call(icbd->modem->conn, OFONO_SERVICE, iinfo->path,
+        OFONO_CONTEXT_IFACE, "SetProperty", val, NULL, G_DBUS_CALL_FLAGS_NONE,
+        -1, NULL, _on_response_set_context, icbd);
+    g_free(iinfo->context.pwd);
+    iinfo->context.pwd = NULL;
+    return;
+  }
+
+  if (iinfo->context.proxy != NULL) {
+    tapi_debug("MessageProxy: %s", iinfo->context.proxy);
+    var = g_variant_new_string(iinfo->context.proxy);
+    val = g_variant_new("(sv)", "MessageProxy", var);
+    g_dbus_connection_call(icbd->modem->conn, OFONO_SERVICE, iinfo->path,
+        OFONO_CONTEXT_IFACE, "SetProperty", val, NULL, G_DBUS_CALL_FLAGS_NONE,
+        -1, NULL, _on_response_set_context, icbd);
+    g_free(iinfo->context.proxy);
+    iinfo->context.proxy = NULL;
+    return;
+  }
+
+  if (iinfo->context.mmsc != NULL) {
+    tapi_debug("MessageCenter: %s", iinfo->context.mmsc);
+    var = g_variant_new_string(iinfo->context.mmsc);
+    val = g_variant_new("(sv)", "MessageCenter", var);
+    g_dbus_connection_call(icbd->modem->conn, OFONO_SERVICE, iinfo->path,
+        OFONO_CONTEXT_IFACE, "SetProperty", val, NULL, G_DBUS_CALL_FLAGS_NONE,
+        -1, NULL, _on_response_set_context, icbd);
+    g_free(iinfo->context.mmsc);
+    iinfo->context.mmsc = NULL;
+    return;
+  }
+
+done:
+  if (cbd->cb != NULL)
+    cbd->cb(ret, NULL, cbd->user_data);
+
+  g_free(cbd);
+  g_free(icbd);
+  g_free(iinfo->path);
+  g_free(iinfo->context.apn);
+  g_free(iinfo->context.user_name);
+  g_free(iinfo->context.pwd);
+  g_free(iinfo->context.proxy);
+  g_free(iinfo->context.mmsc);
+  g_free(iinfo);
+}
+
 EXPORT_API void ofono_connman_set_context(struct ofono_modem *modem,
       char *path, struct pdp_context *context,
       response_cb cb, void *user_data)
 {
-  GVariant *var;
-  char *property;
+  GVariant *var, *val;
+  struct response_cb_data *cbd;
+  struct interm_response_cb_data *icbd;
+  struct set_context_interm_info *iinfo;
 
   CHECK_PARAMETERS(modem && path && context, cb, user_data);
   tapi_debug("Path: %s", path);
 
-  if (context->apn != NULL) {
-    tapi_debug("APN: %s", context->apn);
-    property = "AccessPointName";
-    var = g_variant_new_string(context->apn);
-    ofono_set_property(modem, OFONO_CONTEXT_IFACE, path, property,
-        var, cb, user_data);
-  }
-
-  if (context->user_name != NULL) {
-    tapi_debug("User: %s", context->user_name);
-    property = "Username";
-    var = g_variant_new_string(context->user_name);
-    ofono_set_property(modem, OFONO_CONTEXT_IFACE, path, property,
-        var, cb, user_data);
-  }
-
-  if (context->pwd != NULL) {
-    tapi_debug("Password: %s", context->pwd);
-    property = "Password";
-    var = g_variant_new_string(context->pwd);
-    ofono_set_property(modem, OFONO_CONTEXT_IFACE, path, property,
-        var, cb, user_data);
-  }
+  iinfo = g_new0(struct set_context_interm_info, 1); 
+  memset(iinfo, 0, sizeof(struct set_context_interm_info));
+  iinfo->path = g_strdup(path);
+  if (context->apn)
+    iinfo->context.apn = g_strdup(context->apn);
+  if (context->user_name)
+    iinfo->context.user_name = g_strdup(context->user_name);
+  if (context->pwd)
+    iinfo->context.pwd = g_strdup(context->pwd);
+  if (context->proxy)
+    iinfo->context.proxy = g_strdup(context->proxy);
+  if (context->mmsc)
+    iinfo->context.mmsc = g_strdup(context->mmsc);
+  NEW_RSP_CB_DATA(cbd, cb, user_data);
+  NEW_INTERM_RSP_CB_DATA(icbd, cbd, modem, iinfo);
 
   tapi_debug("Protocol: %d", context->protocol);
-  property = "Protocol";
+
   var = g_variant_new_string(_context_ip_type_to_str(context->protocol));
-  ofono_set_property(modem, OFONO_CONTEXT_IFACE, path, property,
-      var, cb, user_data);
-
-  if (context->proxy != NULL) {
-    tapi_debug("MessageProxy: %s", context->proxy);
-    property = "MessageProxy";
-    var = g_variant_new_string(context->proxy);
-    ofono_set_property(modem, OFONO_CONTEXT_IFACE, path, property,
-        var, cb, user_data);
-  }
-
-  if (context->mmsc != NULL) {
-    tapi_debug("MessageCenter: %s", context->mmsc);
-    property = "MessageCenter";
-    var = g_variant_new_string(context->mmsc);
-    ofono_set_property(modem, OFONO_CONTEXT_IFACE, path, property,
-        var, cb, user_data);
-  }
+  val = g_variant_new("(sv)", "Protocol", var);
+  g_dbus_connection_call(modem->conn, OFONO_SERVICE, path, OFONO_CONTEXT_IFACE,
+      "SetProperty", val, NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+      NULL, _on_response_set_context, icbd);
 }
 
 EXPORT_API tapi_bool ofono_connman_get_context_info(struct ofono_modem *modem,
@@ -405,7 +485,7 @@ EXPORT_API void ofono_connman_deactivate_all_contexts(struct ofono_modem *modem,
       on_response_common, cbd);
 }
 
-static tapi_bool _ofono_connman_get_bool(struct ofono_modem *modem, char *property,
+static tapi_bool _get_bool(struct ofono_modem *modem, char *property,
       tapi_bool *b)
 {
   GError *error = NULL;
@@ -461,7 +541,7 @@ EXPORT_API tapi_bool ofono_connman_get_powered(struct ofono_modem *modem,
       tapi_bool *powered)
 {
   tapi_debug("");
-  return _ofono_connman_get_bool(modem, "Powered", powered);
+  return _get_bool(modem, "Powered", powered);
 }
 
 EXPORT_API void ofono_connman_set_powered(struct ofono_modem *modem,
@@ -482,7 +562,7 @@ EXPORT_API tapi_bool ofono_connman_get_roaming_allowed(struct ofono_modem *modem
       tapi_bool *allowed)
 {
   tapi_debug("");
-  return _ofono_connman_get_bool(modem, "RoamingAllowed", allowed);
+  return _get_bool(modem, "RoamingAllowed", allowed);
 }
 
 EXPORT_API void ofono_connman_set_roaming_allowed(struct ofono_modem *modem,
@@ -503,6 +583,6 @@ EXPORT_API tapi_bool ofono_connman_get_attached(struct ofono_modem *modem,
       tapi_bool *attached)
 {
   tapi_debug("");
-  return _ofono_connman_get_bool(modem, "Attached", attached);
+  return _get_bool(modem, "Attached", attached);
 }
 

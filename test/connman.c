@@ -55,7 +55,7 @@ static void test_connman_add_context()
 {
   int type;
 
-  printf("please input PDP context type (0 - mms, 1 - internet, 2 - wap, 3 - ims):\n");
+  printf("please input PDP context type (1 - mms, 2 - internet, 3 - wap, 4 - ims):\n");
   scanf("%d", &type);
 
   ofono_connman_add_context(g_modem, (enum context_type)type, NULL, NULL);

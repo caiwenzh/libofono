@@ -137,22 +137,6 @@ TResult ofono_error_parse(GError *err);
     } \
   } while (0)
 
-#define CHECK_INTERM_RESULT(_ret, _error, icbd, _dbus_result) \
-  do { \
-    _ret = ofono_error_parse(_error); \
-    if (_ret != TAPI_RESULT_OK) { \
-      struct response_cb_data *__cbd = icbd->cbd; \
-      if (__cbd != NULL && __cbd->cb != NULL) \
-        __cbd->cb(_ret, NULL, __cbd->user_data); \
-      g_free(__cbd); \
-      g_free(icbd); \
-      g_error_free(_error); \
-      if (_dbus_result != NULL) \
-        g_variant_unref(_dbus_result); \
-        return; \
-      } \
-  } while (0)
-
 tapi_bool has_interface(guint32 interfaces, enum ofono_api api);
 
 void on_response_common(GObject *source_object,

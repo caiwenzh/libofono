@@ -171,7 +171,7 @@ struct str_list* ofono_get_modems();
  * Set the callback be called when a modem is added or removed
  *
  * If call ofono_get_modems() before ofono deamon is started no modem can be
- * found. This API provide user a way to monitor the existence of modems.
+ * found. This API provide user a way to monitor the presence of modems.
  *
  * 'cb': the callback be called when a modem is added or removed
  */

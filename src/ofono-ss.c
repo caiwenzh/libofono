@@ -275,28 +275,26 @@ static void _on_response_set_call_forward_noreply(GObject *source_object,
       gpointer user_data)
 {
   TResult ret;
-  GVariant *dbus_result;
-  GVariant *var;
+  GVariant *dbus_result, *var;
   GError *error = NULL;
   struct interm_response_cb_data *icbd = user_data;
   guint16 timeout = *(unsigned char*)icbd->user_data;
 
-  dbus_result = g_dbus_connection_call_finish(
-      G_DBUS_CONNECTION(source_object), result, &error);
-  CHECK_INTERM_RESULT(ret, error, icbd, dbus_result);
+  dbus_result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object),
+        result, &error);
   g_variant_unref(dbus_result);
 
+  ret = ofono_error_parse(error);
+  if (error)
+    g_error_free(error);
   g_free(icbd->user_data);
+  if (ret != TAPI_RESULT_OK) {
+    struct response_cb_data *cbd = icbd->cbd;
+    if (cbd->cb != NULL)
+      cbd->cb(ret, NULL, cbd->user_data);
 
-  if (icbd->modem == NULL) {
-    struct response_cb_data *cbd;
-    tapi_error("");
-
-    cbd = icbd->cbd;
-    if (cbd != NULL && cbd->cb != NULL)
-      cbd->cb(TAPI_RESULT_UNKNOWN_ERROR, NULL, cbd->user_data);
-    free(cbd);
-    free(icbd);
+    g_free(cbd);
+    g_free(icbd);
     return;
   }
 
