@@ -69,32 +69,6 @@ static enum operator_status _str_to_operator_status(const char *status)
   return REG_STATUS_UNKNOWN;
 }
 
-static enum access_tech _str_to_tech(const char *tech)
-{
-  if (tech == NULL) {
-    tapi_error("access technology stirng is null");
-    return ACCESS_TECH_UNKNOWN;
-  }
-
-  if (g_strcmp0(tech, "gsm") == 0)
-    return ACCESS_TECH_GSM;
-
-  if (g_strcmp0(tech, "umts") == 0)
-    return ACCESS_TECH_UTRAN;
-
-  if (g_strcmp0(tech, "edge") == 0)
-    return ACCESS_TECH_EDGE;
-
-  if (g_strcmp0(tech, "hspa") == 0)
-    return ACCESS_TECH_UTRAN_HSDPA_HSUPA;
-
-  if (g_strcmp0(tech, "lte") == 0)
-    return ACCESS_TECH_EUTRAN;
-
-  tapi_warn("Unknown access technology: %s", tech);
-  return ACCESS_TECH_UNKNOWN;
-}
-
 static enum network_selection_mode _str_to_selection_mode(const char *mode)
 {
   if (mode == NULL) {
@@ -173,7 +147,7 @@ static void _get_registration_info(struct ofono_modem *modem,
       tapi_debug("lac: %X", info->cid);
     } else if (g_strcmp0(key, "Technology") == 0) {
       value = g_variant_get_string(var, NULL);
-      info->act = _str_to_tech(value);
+      info->act = ofono_str_to_tech(value);
       tapi_debug("act(%d): %s", info->act, value);
     } else if (g_strcmp0(key, "MobileCountryCode") == 0) {
       value = g_variant_get_string(var, NULL);
@@ -572,7 +546,7 @@ static void _on_response_scan_operators(GObject *obj, GAsyncResult *result,
         GVariantIter iter_tech;
         g_variant_iter_init(&iter_tech, val);
         while (g_variant_iter_loop(&iter_tech, "s", &tech)) {
-          p_op->techs |= 1 << _str_to_tech(tech);
+          p_op->techs |= 1 << ofono_str_to_tech(tech);
           tapi_debug("ACT: %s", tech);
         }
       }

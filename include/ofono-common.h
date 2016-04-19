@@ -88,8 +88,8 @@ enum ofono_noti {
         new ussd status (enum ussd_status*) */
 
   /* Connman(data connection) */
-  OFONO_NOTI_CONNMAN_ATTACHED, /* Packet domain attach status changed:
-        attach status (tapi_bool*), TURE: attached */
+  OFONO_NOTI_CONNMAN_STATUS, /* Packet domain status changed:
+        struct ps_reg_status */
   OFONO_NOTI_CONNMAN_CONTEXT_ACTIVED, /*  PDP context activation information:
         (struct context_actived_noti*) */
 

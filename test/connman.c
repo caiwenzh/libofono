@@ -32,7 +32,7 @@ static void test_connman_get_powered();
 static void test_connman_set_powered();
 static void test_connman_get_roaming_allowed();
 static void test_connman_set_roaming_allowed();
-static void test_connman_get_attached();
+static void test_connman_get_status();
 
 struct menu_info connman_menu[] = {
   {"ofono_connman_add_context", test_connman_add_context, main_menu, NULL},
@@ -47,7 +47,7 @@ struct menu_info connman_menu[] = {
   {"ofono_connman_set_powered", test_connman_set_powered, main_menu, NULL},
   {"ofono_connman_get_roaming_allowed", test_connman_get_roaming_allowed, main_menu, NULL},
   {"ofono_connman_set_roaming_allowed", test_connman_set_roaming_allowed, main_menu, NULL},
-  {"ofono_connman_get_attached", test_connman_get_attached, main_menu, NULL},
+  {"ofono_connman_get_status", test_connman_get_status, main_menu, NULL},
   {NULL, NULL, NULL, NULL}
 };
 
@@ -166,9 +166,9 @@ static void test_connman_set_roaming_allowed()
   ofono_connman_set_roaming_allowed(g_modem, allowed != 0, NULL, NULL);
 }
 
-static void test_connman_get_attached()
+static void test_connman_get_status()
 {
-  tapi_bool attached;
+  struct ps_reg_status status;
 
-  ofono_connman_get_attached(g_modem, &attached);
+  ofono_connman_get_status(g_modem, &status);
 }

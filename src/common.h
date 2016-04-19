@@ -20,6 +20,7 @@
 #include "ofono-common.h"
 #include "ofono-call.h"
 #include "ofono-sim.h"
+#include "ofono-network.h"
 
 #include <glib.h>
 #include <gio/gio.h>
@@ -149,6 +150,7 @@ void ofono_set_property(struct ofono_modem *modem, const char *iface,
 
 unsigned int ofono_get_call_id_from_obj_path(char *obj_path);
 enum ofono_call_status ofono_str_to_call_status(const char *str);
+enum access_tech ofono_str_to_tech(const char *tech);
 
 #ifdef  __cplusplus
 }

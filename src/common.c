@@ -138,3 +138,36 @@ enum ofono_call_status ofono_str_to_call_status(const char *str)
   tapi_warn("unknown call state: %s", str);
   return CALL_STATUS_DISCONNECTED;
 }
+
+enum access_tech ofono_str_to_tech(const char *tech)
+{
+  if (tech == NULL) {
+    tapi_error("access technology stirng is null");
+    return ACCESS_TECH_UNKNOWN;
+  }
+
+  if (g_strcmp0(tech, "gsm") == 0)
+    return ACCESS_TECH_GSM;
+
+  if (g_strcmp0(tech, "umts") == 0)
+    return ACCESS_TECH_UTRAN;
+
+  if (g_strcmp0(tech, "edge") == 0)
+    return ACCESS_TECH_EDGE;
+
+  if (g_strcmp0(tech, "hsdpa") == 0)
+    return ACCESS_TECH_UTRAN_HSDPA;
+
+  if (g_strcmp0(tech, "hsupa") == 0)
+    return ACCESS_TECH_UTRAN_HSUPA;
+
+  if (g_strcmp0(tech, "hspa") == 0)
+    return ACCESS_TECH_UTRAN_HSDPA_HSUPA;
+
+  if (g_strcmp0(tech, "lte") == 0)
+    return ACCESS_TECH_EUTRAN;
+
+  tapi_warn("Unknown access technology: %s", tech);
+  return ACCESS_TECH_UNKNOWN;
+}
+

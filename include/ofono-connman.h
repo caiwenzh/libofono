@@ -19,6 +19,7 @@
 #define __OFONO_CONNMAN_H
 
 #include "ofono-common.h"
+#include "ofono-network.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -74,6 +75,12 @@ struct pdp_context_info {
 struct context_actived_noti {
   char *path; /* the object path of the pdp context */
   tapi_bool actived;
+};
+
+struct ps_reg_status {
+  /* network attaching status, indicates whether data service is available */
+  tapi_bool attached;
+  enum access_tech tech; /* data network acess technology */
 };
 
 /**
@@ -207,12 +214,12 @@ void ofono_connman_set_roaming_allowed(struct ofono_modem *modem,
       void *user_data);
 
 /**
- * Get if Packet Radio Service is attached
+ * Get if Packet Radio Service status
  *
  * Sync API
  */
-tapi_bool ofono_connman_get_attached(struct ofono_modem *modem,
-      tapi_bool *attached);
+tapi_bool ofono_connman_get_status(struct ofono_modem *modem,
+      struct ps_reg_status *status);
 
 #ifdef  __cplusplus
 }

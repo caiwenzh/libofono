@@ -1198,7 +1198,7 @@ static void _ussd_status_notify(GDBusConnection *connection,
   g_variant_unref(var);
 }
 
-static void _connman_attached_notify(GDBusConnection *connection,
+static void _connman_status_notify(GDBusConnection *connection,
       const gchar *sender_name,
       const gchar *object_path,
       const gchar *interface_name,
@@ -1209,15 +1209,15 @@ static void _connman_attached_notify(GDBusConnection *connection,
   struct ofono_modem *modem = user_data;
   GVariant *val;
   gchar *key;
-  tapi_bool attached;
+  struct ps_reg_status status;
 
   tapi_debug("");
 
   g_variant_get(parameters, "(sv)", &key, &val);
 
-  if (g_strcmp0(key, "Attached") == 0) {
-    attached = g_variant_get_boolean(val);
-    _notify(modem, &attached, OFONO_NOTI_CONNMAN_ATTACHED);
+  if (g_strcmp0(key, "Attached") == 0 || g_strcmp0(key, "Bearer") == 0) {
+    ofono_connman_get_status(modem, &status);
+    _notify(modem, &status, OFONO_NOTI_CONNMAN_STATUS);
   }
 
   g_variant_unref(val);
@@ -1506,7 +1506,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   /* connman */
-  case OFONO_NOTI_CONNMAN_ATTACHED:
+  case OFONO_NOTI_CONNMAN_STATUS:
     watch = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_CONNMAN_IFACE,
@@ -1514,7 +1514,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       modem->path,
       NULL,
       G_DBUS_SIGNAL_FLAGS_NONE,
-      _connman_attached_notify,
+      _connman_status_notify,
       modem,
       NULL);
     break;

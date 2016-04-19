@@ -579,10 +579,59 @@ EXPORT_API void ofono_connman_set_roaming_allowed(struct ofono_modem *modem,
       "RoamingAllowed", var, cb, user_data);
 }
 
-EXPORT_API tapi_bool ofono_connman_get_attached(struct ofono_modem *modem,
-      tapi_bool *attached)
+EXPORT_API tapi_bool ofono_connman_get_status(struct ofono_modem *modem,
+      struct ps_reg_status *status)
 {
+  GError *error = NULL;
+  GVariant *var_properties;
+  GVariantIter *iter;
+  char *key;
+  GVariant *var_val;
+
   tapi_debug("");
-  return _get_bool(modem, "Attached", attached);
+  if (modem == NULL || status == NULL) {
+    tapi_error("Invalid parmeter");
+    return FALSE;
+  }
+
+  if (!has_interface(modem->interfaces, OFONO_API_CONNMAN)) {
+    tapi_error("OFONO_API_CONNMAN doesn't exist");
+    return FALSE;
+  }
+
+  var_properties = g_dbus_connection_call_sync(modem->conn,
+      OFONO_SERVICE, modem->path,
+      OFONO_CONNMAN_IFACE,
+      "GetProperties", NULL, NULL,
+      G_DBUS_SEND_MESSAGE_FLAGS_NONE, -1, NULL, &error);
+
+  if (var_properties == NULL) {
+    tapi_error("dbus call failed (%s)", error->message);
+    g_error_free(error);
+    return FALSE;
+  }
+
+  status->attached = FALSE;
+  status->tech = ACCESS_TECH_UNKNOWN;
+
+  g_variant_get(var_properties, "(a{sv})", &iter);
+  while (g_variant_iter_next(iter, "{sv}", &key, &var_val)) {
+    if (g_strcmp0(key, "Attached") == 0) {
+      g_variant_get(var_val, "b", &status->attached);
+      tapi_info("Attached: %d", status->attached);
+    } else if (g_strcmp0(key, "Attached") == 0) {
+      const char *tech_str = g_variant_get_string(var_val, NULL);
+      tapi_info("tech: %s", tech_str);
+      status->tech = ofono_str_to_tech(tech_str);
+    }
+
+    g_free(key);
+    g_variant_unref(var_val);
+  }
+
+  g_variant_iter_free(iter);
+  g_variant_unref(var_properties);
+
+  return TRUE;
 }
 
