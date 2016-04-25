@@ -229,7 +229,7 @@ EXPORT_API tapi_bool ofono_sim_get_info(struct ofono_modem *modem,
 
   memset(info, 0, sizeof(struct sim_info));
   if (!has_interface(modem->interfaces, OFONO_API_SIM)) {
-    info->status = SIM_STATUS_UNKNOWN;
+    info->status = SIM_STATUS_ABSENT;
     return TRUE;
   }
 
@@ -248,7 +248,7 @@ EXPORT_API tapi_bool ofono_sim_get_info(struct ofono_modem *modem,
   while (g_variant_iter_next(iter, "{sv}", &key, &var_val)) {
     if (g_strcmp0(key, "Present") == 0) {
       if (g_variant_get_boolean(var_val) == TRUE)
-        info->status = SIM_STATUS_UNKNOWN;
+        info->status = SIM_STATUS_INITIALIZING;
       else
         info->status = SIM_STATUS_ABSENT;
     } else if (g_strcmp0(key, "SubscriberIdentity") == 0) {
@@ -328,10 +328,11 @@ EXPORT_API tapi_bool ofono_sim_get_info(struct ofono_modem *modem,
   if(info->status == SIM_STATUS_ABSENT)
     return TRUE;
 
+  info->status = SIM_STATUS_INITIALIZING;
   if (info->pin_required != PIN_LOCK_NONE)
     info->status = SIM_STATUS_LOCKED;
-  else
-    info->status = SIM_STATUS_UNKNOWN;
+  else if (info->retries[PIN_LOCK_SIM_PIN] != 0 || info->retries[PIN_LOCK_SIM_PUK] != 0)
+    info->status = SIM_STATUS_READY;
 
   return TRUE;
 }

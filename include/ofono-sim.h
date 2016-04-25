@@ -52,11 +52,14 @@ enum pin_lock_type {
   PIN_LOCK_INVALID,
 };
 
-/* According to ofono dbus API, can't get to know whether sim is ready directly */
+/* Note: According to ofono dbus API, can't get to know whether sim is ready
+   directly, assume it's ready if retries has been got.
+ */
 enum sim_status {
   SIM_STATUS_ABSENT,
   SIM_STATUS_LOCKED,
-  SIM_STATUS_UNKNOWN, /* SIN status is unknown, initializing or ready */
+  SIM_STATUS_INITIALIZING,
+  SIM_STATUS_READY,
 };
 
 struct sim_info {
