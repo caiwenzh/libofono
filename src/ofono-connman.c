@@ -619,7 +619,7 @@ EXPORT_API tapi_bool ofono_connman_get_status(struct ofono_modem *modem,
     if (g_strcmp0(key, "Attached") == 0) {
       g_variant_get(var_val, "b", &status->attached);
       tapi_info("Attached: %d", status->attached);
-    } else if (g_strcmp0(key, "Attached") == 0) {
+    } else if (g_strcmp0(key, "Bearer") == 0) {
       const char *tech_str = g_variant_get_string(var_val, NULL);
       tapi_info("tech: %s", tech_str);
       status->tech = ofono_str_to_tech(tech_str);
