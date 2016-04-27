@@ -52,10 +52,6 @@ enum ofono_noti {
         Registration info (struct registration_info*) */
 
   /* Call */
-  OFONO_NOTI_CALL_ADDED, /* A new call is added: New added call
-        information (struct ofono_call_info*) */
-  OFONO_NOTI_CALL_REMOVED, /* A call is removed: The id of the removed
-        call: (unsigned int *) */
   OFONO_NOTI_CALL_STATUS_CHANGED, /* Call status changed: Call
         information (struct ofono_call_info*) */
   OFONO_NOTI_CALL_DISCONNECT_REASON, /* Call disconnect reason: reason

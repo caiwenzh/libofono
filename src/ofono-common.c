@@ -30,6 +30,8 @@
 #include "ofono-network.h"
 #include "ofono-connman.h"
 
+#define MAX_WATCHES_NUM 2
+
 static GDBusConnection *s_bus_conn = NULL;
 static guint s_modem_added_watch = 0;
 static guint s_modem_removed_watch = 0;
@@ -74,7 +76,8 @@ struct noti_cb_data {
 struct ofono_noti_data {
   struct ofono_modem *modem;
   enum ofono_noti noti;
-  guint watch;
+  /* may need subscribe multiply signal for a notification */
+  guint watches[MAX_WATCHES_NUM];
   GList *cb_list;
 };
 
@@ -338,6 +341,7 @@ static void _noti_data_free(gpointer data)
 EXPORT_API void ofono_modem_deinit(struct ofono_modem *modem)
 {
   GList *list;
+  int i;
 
   tapi_debug("");
 
@@ -352,7 +356,10 @@ EXPORT_API void ofono_modem_deinit(struct ofono_modem *modem)
     if (nd == NULL)
       continue;
 
-    g_dbus_connection_signal_unsubscribe(modem->conn, nd->watch);
+    for (i = 0; i < MAX_WATCHES_NUM; i++) {
+      if (nd->watches[i] > 0)
+        g_dbus_connection_signal_unsubscribe(modem->conn, nd->watches[i]);
+    }
   }
 
   g_free(modem->path);
@@ -494,7 +501,7 @@ EXPORT_API void ofono_set_modems_changed_callback(modems_changed_cb cb)
         _modem_added_notify,
         NULL,
         NULL);
-	if (!s_modem_removed_watch)
+  if (!s_modem_removed_watch)
     s_modem_removed_watch = g_dbus_connection_signal_subscribe(
         s_bus_conn,
         OFONO_SERVICE,
@@ -570,14 +577,10 @@ static void _modem_interfaces_notify(GDBusConnection *connection,
   tapi_debug("");
 
   g_variant_get(parameters, "(sv)", &key, &var);
-  if (g_strcmp0(key, "Interfaces") == 0) {
-    modem->interfaces = _modem_interfaces_extract(var);
+  modem->interfaces = _modem_interfaces_extract(var);
+  tapi_debug("modem: %s Interfaces 0x%02x", modem->path, modem->interfaces);
 
-    tapi_debug("modem: %s Interfaces 0x%02x", modem->path, modem->interfaces);
-
-    _notify(modem, &modem->interfaces,
-        OFONO_NOTI_INTERFACES_CHANGED);
-  }
+  _notify(modem, &modem->interfaces, OFONO_NOTI_INTERFACES_CHANGED);
 
   g_variant_unref(var);
   g_free(key);
@@ -600,12 +603,8 @@ static void _network_signal_strength_notify(GDBusConnection *connection,
   tapi_debug("");
 
   g_variant_get(parameters, "(sv)", &key, &var);
-
-  if (g_strcmp0(key, "Strength") == 0) {
-    g_variant_get(var, "y", &signal);
-    _notify(modem, &signal,
-        OFONO_NOTI_SIGNAL_STRENTH_CHANGED);
-  }
+  g_variant_get(var, "y", &signal);
+  _notify(modem, &signal, OFONO_NOTI_SIGNAL_STRENTH_CHANGED);
 
   g_free(key);
   g_variant_unref(var);
@@ -693,27 +692,7 @@ static void _call_added_notify(GDBusConnection *connection,
   g_variant_iter_free(info_iter);
   g_free(path);
 
-  _notify(modem, &call_info, OFONO_NOTI_CALL_ADDED);
-}
-
-static void _call_removed_notify(GDBusConnection *connection,
-      const gchar *sender_name,
-      const gchar *object_path,
-      const gchar *interface_name,
-      const gchar *signal_name,
-      GVariant *parameters,
-      gpointer user_data)
-{
-  struct ofono_modem *modem = user_data;
-  char *path;
-  unsigned int call_id;
-
-  tapi_debug("");
-
-  g_variant_get(parameters, "(o)", &path);
-  call_id = ofono_get_call_id_from_obj_path(path);
-  _notify(modem, &call_id, OFONO_NOTI_CALL_REMOVED);
-  g_free(path);
+  _notify(modem, &call_info, OFONO_NOTI_CALL_STATUS_CHANGED);
 }
 
 static void _call_status_changed_notify(GDBusConnection *connection,
@@ -805,17 +784,15 @@ static void _stk_idle_mode_text_notify(GDBusConnection *connection,
   struct ofono_modem *modem = user_data;
   char *key;
   GVariant *val;
+  char *text;
 
   tapi_debug("");
 
   g_variant_get(parameters, "(sv)", &key, &val);
-  if (g_strcmp0(key, "IdleModeText") == 0) {
-    char *text;
-    g_variant_get(val, "s", &text);
-    _notify(modem, text, OFONO_NOTI_SAT_IDLE_MODE_TEXT);
-    g_free(text);
-  }
+  g_variant_get(val, "s", &text);
+  _notify(modem, text, OFONO_NOTI_SAT_IDLE_MODE_TEXT);
 
+  g_free(text);
   g_free(key);
   g_variant_unref(val);
 }
@@ -835,8 +812,7 @@ static void _stk_main_menu_notify(GDBusConnection *connection,
   tapi_debug("");
 
   g_variant_get(parameters, "(sv)", &key, &val);
-  if (strncmp(key, "MainMenu", strlen("MainMenu")) == 0)
-    _notify(modem, NULL, OFONO_NOTI_SAT_MAIN_MENU);
+  _notify(modem, NULL, OFONO_NOTI_SAT_MAIN_MENU);
 
   g_free(key);
   g_variant_unref(val);
@@ -889,31 +865,31 @@ static void _sms_sending_status_notify(GDBusConnection *connection,
   char *key;
   GVariant *val;
   struct ofono_sms_sent_staus_noti noti;
+  const char *state;
 
   tapi_debug("");
 
   memset(&noti, 0, sizeof(noti));
 
   g_variant_get(parameters, "(sv)", &key, &val);
-  if (g_strcmp0(key, "State") == 0) {
-    const char *state = g_variant_get_string(val, NULL);
 
-    tapi_debug("SMS State: %s", state);
+  state = g_variant_get_string(val, NULL);
+  tapi_debug("SMS State: %s", state);
 
-    if (g_strcmp0(state, "pending") == 0)
-      noti.state =  OFONO_SMS_SENT_STATE_PENDING;
-    else if (g_strcmp0(state, "failed") == 0)
-      noti.state =  OFONO_SMS_SENT_STATE_FAILED;
-    else if (g_strcmp0(state, "sent") == 0)
-      noti.state =  OFONO_SMS_SENT_STATE_SENT;
-    else {
-      tapi_error("unknown message state: %s", state);
+  if (g_strcmp0(state, "pending") == 0)
+    noti.state =  OFONO_SMS_SENT_STATE_PENDING;
+  else if (g_strcmp0(state, "failed") == 0)
+    noti.state =  OFONO_SMS_SENT_STATE_FAILED;
+  else if (g_strcmp0(state, "sent") == 0)
+    noti.state =  OFONO_SMS_SENT_STATE_SENT;
+  else {
+    tapi_error("unknown message state: %s", state);
 
-      g_free(key);
-      g_variant_unref(val);
-      return;
-    }
+    g_free(key);
+    g_variant_unref(val);
+    return;
   }
+
   g_free(key);
   g_variant_unref(val);
 
@@ -1170,25 +1146,25 @@ static void _ussd_status_notify(GDBusConnection *connection,
   struct ofono_modem *modem = user_data;
   GVariant *var;
   char *key;
+  const char *state;
   enum ussd_status status;
 
   tapi_debug("");
 
   g_variant_get(parameters, "(sv)", &key, &var);
-  if (g_strcmp0(key, "State") == 0) {
-    const char *state = g_variant_get_string(var, NULL);
-    if (g_strcmp0(state, "idle") == 0)
-      status = SS_USSD_STATUS_IDLE;
-    else if (g_strcmp0(state, "active") == 0)
-      status = SS_USSD_STATUS_ACTIVE;
-    else if (g_strcmp0(state, "user-response") == 0)
-      status = SS_USSD_STATUS_ACTION_REQUIRE;
-    else {
-      tapi_error("Unknown USSD status");
-      g_free(key);
-      g_variant_unref(var);
-      return;
-    }
+  
+  state = g_variant_get_string(var, NULL);
+  if (g_strcmp0(state, "idle") == 0)
+    status = SS_USSD_STATUS_IDLE;
+  else if (g_strcmp0(state, "active") == 0)
+    status = SS_USSD_STATUS_ACTIVE;
+  else if (g_strcmp0(state, "user-response") == 0)
+    status = SS_USSD_STATUS_ACTION_REQUIRE;
+  else {
+    tapi_error("Unknown USSD status");
+    g_free(key);
+    g_variant_unref(var);
+    return;
   }
 
   _notify(modem, &status, OFONO_NOTI_USSD_STATUS_CHANGED);
@@ -1241,26 +1217,24 @@ static void _connman_context_actived_notify(GDBusConnection *connection,
   noti.path = g_strdup(object_path);
   g_variant_get(parameters, "(sv)", &key, &val);
 
-  if (g_strcmp0(key, "Active") == 0) {
-    noti.actived = g_variant_get_boolean(val);
-    _notify(modem, &noti, OFONO_NOTI_CONNMAN_CONTEXT_ACTIVED);
-  }
+  noti.actived = g_variant_get_boolean(val);
+  _notify(modem, &noti, OFONO_NOTI_CONNMAN_CONTEXT_ACTIVED);
 
   g_variant_unref(val);
   g_free(key);
   g_free(noti.path);
 }
 
-static guint _subscribe_notification(struct ofono_modem *modem,
-          enum ofono_noti noti)
+static void _subscribe_notification(struct ofono_modem *modem,
+          enum ofono_noti noti, guint *watches)
 {
-  guint watch = 0;
+  int count = 0;
 
   tapi_debug("");
 
   switch (noti) {
   case OFONO_NOTI_MODEM_REMOVED:
-    watch = g_dbus_connection_signal_subscribe(
+    watches[count++] = g_dbus_connection_signal_subscribe(
       s_bus_conn,
       OFONO_SERVICE,
       OFONO_MANAGER_IFACE,
@@ -1274,7 +1248,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
     break;
 
   case OFONO_NOTI_MODEM_STATUS_CHAANGED:
-    watch = g_dbus_connection_signal_subscribe(
+    watches[count++] = g_dbus_connection_signal_subscribe(
       modem->conn,
       OFONO_SERVICE,
       OFONO_MODEM_IFACE,
@@ -1287,13 +1261,13 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   case OFONO_NOTI_INTERFACES_CHANGED:
-    watch = g_dbus_connection_signal_subscribe(
+    watches[count++] = g_dbus_connection_signal_subscribe(
       modem->conn,
       OFONO_SERVICE,
       OFONO_MODEM_IFACE,
       "PropertyChanged",
       modem->path,
-      NULL,
+      "Interfaces",
       G_DBUS_SIGNAL_FLAGS_NONE,
       _modem_interfaces_notify,
       modem,
@@ -1302,20 +1276,20 @@ static guint _subscribe_notification(struct ofono_modem *modem,
 
   /* network */
   case OFONO_NOTI_SIGNAL_STRENTH_CHANGED:
-    watch = g_dbus_connection_signal_subscribe(
+    watches[count++] = g_dbus_connection_signal_subscribe(
       modem->conn,
       OFONO_SERVICE,
       OFONO_NETWORK_REGISTRATION_IFACE,
       "PropertyChanged",
       modem->path,
-      NULL,
+      "Strength",
       G_DBUS_SIGNAL_FLAGS_NONE,
       _network_signal_strength_notify,
       modem,
       NULL);
     break;
   case OFONO_NOTI_REGISTRATION_STATUS_CHANGED:
-    watch = g_dbus_connection_signal_subscribe(
+    watches[count++] = g_dbus_connection_signal_subscribe(
       modem->conn,
       OFONO_SERVICE,
       OFONO_NETWORK_REGISTRATION_IFACE,
@@ -1328,8 +1302,19 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   /* Call */
-  case OFONO_NOTI_CALL_ADDED:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+  case OFONO_NOTI_CALL_STATUS_CHANGED:
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
+      OFONO_SERVICE,
+      OFONO_VOICECALL_IFACE,
+      "PropertyChanged",
+      NULL,
+      NULL,
+      G_DBUS_SIGNAL_FLAGS_NONE,
+      _call_status_changed_notify,
+      modem,
+      NULL);
+    /* dialing and incomming call is reported by "CallAdded" signal */
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_VOICECALL_MANAGER_IFACE,
       "CallAdded",
@@ -1340,32 +1325,8 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       modem,
       NULL);
     break;
-  case OFONO_NOTI_CALL_REMOVED:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
-      OFONO_SERVICE,
-      OFONO_VOICECALL_MANAGER_IFACE,
-      "CallRemoved",
-      modem->path,
-      NULL,
-      G_DBUS_SIGNAL_FLAGS_NONE,
-      _call_removed_notify,
-      modem,
-      NULL);
-    break;
-  case OFONO_NOTI_CALL_STATUS_CHANGED:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
-      OFONO_SERVICE,
-      OFONO_VOICECALL_IFACE,
-      "PropertyChanged",
-      NULL,
-      NULL,
-      G_DBUS_SIGNAL_FLAGS_NONE,
-      _call_status_changed_notify,
-      modem,
-      NULL);
-    break;
   case OFONO_NOTI_CALL_DISCONNECT_REASON:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_VOICECALL_IFACE,
       "DisconnectReason",
@@ -1380,7 +1341,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
   /* SMS */
   case OFONO_NOTI_INCOMING_SMS_CLASS_0:
     /* class 0 sms arrives */
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_MESSAGE_MANAGER_IFACE,
       "ImmediateMessage",
@@ -1393,7 +1354,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
     break;
   case OFONO_NOTI_INCOMING_SMS:
     /* normal sms arrives */
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_MESSAGE_MANAGER_IFACE,
       "IncomingMessage",
@@ -1405,19 +1366,19 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   case OFONO_NOTI_MSG_STATUS_CHANGED:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_MESSAGE_IFACE,
       "PropertyChanged",
       NULL,
-      NULL,
+      "State",
       G_DBUS_SIGNAL_FLAGS_NONE,
       _sms_sending_status_notify,
       modem,
       NULL);
     break;
   case OFONO_NOTI_SMS_DELIVERY_REPORT:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_MESSAGE_MANAGER_IFACE,
       "SendStatusReport",
@@ -1429,7 +1390,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   case OFONO_NOTI_INCOMING_CBS:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_CELL_BROADCAST_IFACE,
       "IncomingBroadcast",
@@ -1441,7 +1402,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   case OFONO_NOTI_EMERGENCY_CBS:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_CELL_BROADCAST_IFACE,
       "EmergencyBroadcast",
@@ -1455,7 +1416,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
 
   /* SIM */
   case OFONO_NOTI_SIM_STATUS_CHANGED:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_SIM_MANAGER_IFACE,
       "PropertyChanged",
@@ -1469,7 +1430,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
 
   /* USSD */
   case OFONO_NOTI_USSD_NOTIFICATION:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_SUPPLEMENTARY_SERVICES_IFACE,
       "NotificationReceived",
@@ -1481,7 +1442,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   case OFONO_NOTI_USSD_REQ:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_SUPPLEMENTARY_SERVICES_IFACE,
       "RequestReceived",
@@ -1493,12 +1454,12 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   case OFONO_NOTI_USSD_STATUS_CHANGED:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_SUPPLEMENTARY_SERVICES_IFACE,
       "PropertyChanged",
       modem->path,
-      NULL,
+      "State",
       G_DBUS_SIGNAL_FLAGS_NONE,
       _ussd_status_notify,
       modem,
@@ -1506,7 +1467,7 @@ static guint _subscribe_notification(struct ofono_modem *modem,
     break;
   /* connman */
   case OFONO_NOTI_CONNMAN_STATUS:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_CONNMAN_IFACE,
       "PropertyChanged",
@@ -1518,12 +1479,12 @@ static guint _subscribe_notification(struct ofono_modem *modem,
       NULL);
     break;
   case OFONO_NOTI_CONNMAN_CONTEXT_ACTIVED:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_CONTEXT_IFACE,
       "PropertyChanged",
       NULL,
-      NULL,
+      "Active",
       G_DBUS_SIGNAL_FLAGS_NONE,
       _connman_context_actived_notify,
       modem,
@@ -1531,32 +1492,30 @@ static guint _subscribe_notification(struct ofono_modem *modem,
     break;
   /* STK */
   case OFONO_NOTI_SAT_IDLE_MODE_TEXT:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_STK_IFACE,
       "PropertyChanged",
       modem->path,
-      NULL,
+      "IdleModeText",
       G_DBUS_SIGNAL_FLAGS_NONE,
       _stk_idle_mode_text_notify,
       modem,
       NULL);
     break;
   case OFONO_NOTI_SAT_MAIN_MENU:
-    watch = g_dbus_connection_signal_subscribe(modem->conn,
+    watches[count++] = g_dbus_connection_signal_subscribe(modem->conn,
       OFONO_SERVICE,
       OFONO_STK_IFACE,
       "PropertyChanged",
       modem->path,
-      NULL,
+      "MainMenu",
       G_DBUS_SIGNAL_FLAGS_NONE,
       _stk_main_menu_notify,
       modem,
       NULL);
     break;
   }
-
-  return watch;
 }
 
 EXPORT_API tapi_bool ofono_register_notification_callback(struct ofono_modem *modem,
@@ -1568,7 +1527,7 @@ EXPORT_API tapi_bool ofono_register_notification_callback(struct ofono_modem *mo
   struct noti_cb_data *cb_data;
   struct ofono_noti_data *nd;
   GList *list;
-  guint watch;
+  guint watches[MAX_WATCHES_NUM];
 
   tapi_debug("");
 
@@ -1597,8 +1556,9 @@ EXPORT_API tapi_bool ofono_register_notification_callback(struct ofono_modem *mo
     return TRUE;
   }
 
-  watch = _subscribe_notification(modem, noti);
-  if (watch == 0) {
+  memset(watches, 0, sizeof(watches));
+  _subscribe_notification(modem, noti, watches);
+  if (watches[0] == 0) {
     tapi_error("fail to subscribe notification");
     g_free(cb_data);
 
@@ -1610,7 +1570,7 @@ EXPORT_API tapi_bool ofono_register_notification_callback(struct ofono_modem *mo
   nd->modem = modem;
   nd->noti = noti;
   nd->cb_list = g_list_append(nd->cb_list, cb_data);
-  nd->watch = watch;
+  memcpy(nd->watches, watches, sizeof(watches));
 
   modem->noti_list = g_list_append(modem->noti_list, nd);
 
@@ -1648,7 +1608,11 @@ EXPORT_API void ofono_unregister_notification_callback(struct ofono_modem *modem
   }
 
   if (nd->cb_list == NULL) {
-    g_dbus_connection_signal_unsubscribe(modem->conn, nd->watch);
+    int i;
+    for (i = 0; i < MAX_WATCHES_NUM; i++) {
+      if (nd->watches[i] > 0)
+        g_dbus_connection_signal_unsubscribe(modem->conn, nd->watches[i]);
+    }
     modem->noti_list = g_list_remove(modem->noti_list, nd);
     g_free(nd);
   }
