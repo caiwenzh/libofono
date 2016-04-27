@@ -26,6 +26,7 @@ static void test_sim_enter_pin();
 static void test_sim_reset_pin();
 static void test_sim_change_pin();
 static void test_sim_get_info();
+static void test_sim_io();
 
 struct menu_info sim_menu[] = {
   {"ofono_sim_enable_pin", test_sim_enable_pin, main_menu, NULL},
@@ -34,6 +35,7 @@ struct menu_info sim_menu[] = {
   {"ofono_sim_reset_pin", test_sim_reset_pin, main_menu, NULL},
   {"ofono_sim_change_pin", test_sim_change_pin, main_menu, NULL},
   {"ofono_sim_get_info", test_sim_get_info, main_menu, NULL},
+  {"ofono_sim_io", test_sim_io, main_menu, NULL},
   {NULL, NULL, NULL, NULL}
 };
 
@@ -108,4 +110,26 @@ static void test_sim_get_info()
   struct sim_info info;
 
   ofono_sim_get_info(g_modem, &info);
+}
+
+static void test_sim_io()
+{
+  struct sim_io_req req;
+  int cmd, fid, p1, p2, p3;
+  char content[1024];
+
+  printf("please input cmd, file_id, p1, p2, p3 (sperate by comma):\n");
+  scanf("%d,%d,%d,%d,%d", &req.cmd, &req.fid, &req.p1, &req.p2, &req.p3);
+
+  req.data = "";
+  if (req.cmd == 214 || req.cmd == 220) {
+  	 printf("please input content to write (hex):\n");
+     scanf("%s", content);
+	 req.data = content;
+  }
+
+  req.path = "";
+
+  printf("%d %d %d %d %d\n", req.cmd, req.fid, req.p1, req.p2, req.p3);
+  ofono_sim_io(g_modem, &req, NULL, NULL);
 }

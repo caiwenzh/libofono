@@ -336,3 +336,45 @@ EXPORT_API tapi_bool ofono_sim_get_info(struct ofono_modem *modem,
 
   return TRUE;
 }
+
+static void _on_response_sim_io(GObject *obj, GAsyncResult *result,
+      gpointer user_data)
+{
+  TResult ret;
+  GVariant *resp;
+  GError *error = NULL;
+  struct response_cb_data *cbd = user_data;
+  struct sim_io_resp sir;
+
+  resp = g_dbus_connection_call_finish(G_DBUS_CONNECTION(obj), result, &error);
+
+  CHECK_RESULT(ret, error, cbd, resp);
+
+  g_variant_get(resp, "(yys)", &sir.sw1, &sir.sw2, &sir.response);
+  tapi_debug("sim_io response: %02X%02X %s", sir.sw1, sir.sw2, sir.response);
+
+  CALL_RESP_CALLBACK(ret, &sir, cbd);
+
+  g_variant_unref(resp);
+  g_free(sir.response);
+}
+
+EXPORT_API void ofono_sim_io(struct ofono_modem *modem, struct sim_io_req *req,
+      response_cb cb, void *user_data)
+{
+  struct response_cb_data *cbd;
+  GVariant *var;
+
+  CHECK_PARAMETERS(modem && req, cb, user_data);
+  NEW_RSP_CB_DATA(cbd, cb, user_data);
+
+  var = g_variant_new("(yusyyys)", req->cmd, req->fid,
+                req->path ? req->path : "",
+                req->p1, req->p2, req->p3,
+                req->data ? req->data : "");
+
+  g_dbus_connection_call(modem->conn, OFONO_SERVICE, modem->path,
+      OFONO_SIM_MANAGER_IFACE, "SIMIO", var,
+      NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+      _on_response_sim_io, cbd); 
+}

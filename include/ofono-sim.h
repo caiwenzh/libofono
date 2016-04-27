@@ -74,6 +74,35 @@ struct sim_info {
   unsigned char retries[PIN_LOCK_INVALID];
 };
 
+enum sim_io_cmd {
+  SIM_IO_CMD_READ_BINARY = 176,
+  SIM_IO_CMD_READ_RECORD = 178,
+  SIM_IO_CMD_GET_RESPONSE = 192,
+  SIM_IO_CMD_UPDATE_BINARY = 214,
+  SIM_IO_CMD_UPDATE_RECORD = 220,
+  SIM_IO_CMD_STATUS = 242,
+  SIM_IO_CMD_RETRIEVE_DATA = 203,
+  SIM_IO_CMD_SET_DATA = 219,
+};
+
+/* detail of this data struct please refer to 3GPP 27.007 +CRSM */
+struct sim_io_req {
+  enum sim_io_cmd cmd;
+  unsigned int fid; /* file identifier */
+  char *path; /* path of an elementary file on the SIM/UICC in hex format */
+  unsigned char p1;
+  unsigned char p2;
+  unsigned char p3;
+  char *data; /* the data to write to card, may be NULL */
+};
+
+/* detail of this data struct please refer to 3GPP 27.007 +CRSM */
+struct sim_io_resp {
+  unsigned char sw1;
+  unsigned char sw2;
+  char *response;
+};
+
 /**
  * enable pin lock
  *
@@ -138,7 +167,7 @@ void ofono_sim_reset_pin(struct ofono_modem *modem,
  * "type": pin type
  * "old_pin": old pin
  * "new_pin": new pin
-
+ *
  * Async response data: NULL
  */
 void ofono_sim_change_pin(struct ofono_modem *modem,
@@ -154,6 +183,21 @@ void ofono_sim_change_pin(struct ofono_modem *modem,
  * sync API
  */
 tapi_bool ofono_sim_get_info(struct ofono_modem *modem, struct sim_info *info);
+
+/**
+ * Restricted SIM access
+ *
+ * "req": SIM IO request detail
+ *
+ * Async response data: (struct sim_io_resp *)
+ *
+ * Note: oFono implements SIM IO internally, it doesn't export SIM IO API.
+ *       This API isn't formally supported by oFono, it's user extending.
+ */
+void ofono_sim_io(struct ofono_modem *modem,
+      struct sim_io_req *req,
+      response_cb cb,
+      void *user_data);
 
 #ifdef  __cplusplus
 }
