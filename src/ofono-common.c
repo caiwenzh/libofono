@@ -455,7 +455,7 @@ static void _modem_added_notify(GDBusConnection *connection,
   path = g_variant_get_string(value, NULL);
 
   if (s_modems_changed_cb)
-	  s_modems_changed_cb(path, TRUE);
+    s_modems_changed_cb(path, TRUE);
 
   g_variant_unref(value);
 }
@@ -474,18 +474,17 @@ static void _modem_removed_notify(GDBusConnection *connection,
   tapi_debug("");
 
   g_variant_get(parameters, "(o)", &path);
-  _notify(modem, path, OFONO_NOTI_MODEM_REMOVED);
 
-	if (s_modems_changed_cb)
-	  s_modems_changed_cb(path, FALSE);
+  if (s_modems_changed_cb)
+    s_modems_changed_cb(path, FALSE);
 
   g_free(path);
 }
 
 EXPORT_API void ofono_set_modems_changed_callback(modems_changed_cb cb)
 {
-	if (!cb)
-	  return;
+  if (!cb)
+    return;
 
   s_modems_changed_cb = cb;
 
@@ -1233,20 +1232,6 @@ static void _subscribe_notification(struct ofono_modem *modem,
   tapi_debug("");
 
   switch (noti) {
-  case OFONO_NOTI_MODEM_REMOVED:
-    watches[count++] = g_dbus_connection_signal_subscribe(
-      s_bus_conn,
-      OFONO_SERVICE,
-      OFONO_MANAGER_IFACE,
-      "ModemRemoved",
-      OFONO_MANAGER_PATH,
-      NULL,
-      G_DBUS_SIGNAL_FLAGS_NONE,
-      _modem_removed_notify,
-      modem,
-      NULL);
-    break;
-
   case OFONO_NOTI_MODEM_STATUS_CHAANGED:
     watches[count++] = g_dbus_connection_signal_subscribe(
       modem->conn,

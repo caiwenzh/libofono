@@ -40,7 +40,6 @@ struct str_list {
 
 enum ofono_noti {
   /* modem */
-  OFONO_NOTI_MODEM_REMOVED, /* Modem removed: object path (char*) */
   OFONO_NOTI_MODEM_STATUS_CHAANGED, /* Modem status changed: enum modem_status */
   OFONO_NOTI_INTERFACES_CHANGED, /* Modem interface changed: Interfaces
         bit map (guint32*) */
