@@ -146,7 +146,7 @@ enum access_tech ofono_str_to_tech(const char *tech)
     return ACCESS_TECH_UNKNOWN;
   }
 
-  if (g_strcmp0(tech, "gsm") == 0)
+  if (g_strcmp0(tech, "gsm") == 0 || g_strcmp0(tech, "gprs") == 0)
     return ACCESS_TECH_GSM;
 
   if (g_strcmp0(tech, "umts") == 0)
@@ -170,4 +170,3 @@ enum access_tech ofono_str_to_tech(const char *tech)
   tapi_warn("Unknown access technology: %s", tech);
   return ACCESS_TECH_UNKNOWN;
 }
-

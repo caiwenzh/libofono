@@ -1152,7 +1152,7 @@ static void _ussd_status_notify(GDBusConnection *connection,
   tapi_debug("");
 
   g_variant_get(parameters, "(sv)", &key, &var);
-  
+ 
   state = g_variant_get_string(var, NULL);
   if (g_strcmp0(state, "idle") == 0)
     status = SS_USSD_STATUS_IDLE;
