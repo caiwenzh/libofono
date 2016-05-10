@@ -130,7 +130,10 @@ int main(int argc, char** argv)
 
   ofono_set_modems_changed_callback(on_modems_changed);
 
+#if !GLIB_CHECK_VERSION(2,35,0)
   g_type_init();
+#endif
+
   mainloop = g_main_loop_new(NULL, FALSE);
 
   pthread_create(&pid, NULL, menu_thread, NULL);

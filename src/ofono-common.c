@@ -89,7 +89,9 @@ static GDBusConnection *_get_dbus_connection()
   if (s_bus_conn != NULL)
     return s_bus_conn;
 
+#if !GLIB_CHECK_VERSION(2,35,0)
   g_type_init();
+#endif
 
   addr = g_dbus_address_get_for_bus_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
   if (addr == NULL) {
