@@ -711,6 +711,10 @@ static void _call_status_changed_notify(GDBusConnection *connection,
 
   tapi_debug("");
 
+  /* avoid signal from other modem */
+  if (strncmp(object_path, modem->path, strlen(modem->path)) != 0)
+    return;
+
   memset(&call_info, 0, sizeof(call_info));
 
   /* ofono report property one by one, we'd like get all once otherwise
@@ -750,6 +754,10 @@ static void _call_disconnect_reason_cb(GDBusConnection *connection,
   struct ofono_modem *modem = user_data;
   char *reason;
   struct ofono_call_disconnect_reason cdr;
+
+  /* avoid signal from other modem */
+  if (strncmp(object_path, modem->path, strlen(modem->path)) != 0)
+    return;
 
   memset(&cdr, 0, sizeof(struct ofono_call_disconnect_reason));
   cdr.call_id = ofono_get_call_id_from_obj_path((gchar *)object_path);
@@ -865,6 +873,10 @@ static void _sms_sending_status_notify(GDBusConnection *connection,
   GVariant *val;
   struct ofono_sms_sent_staus_noti noti;
   const char *state;
+
+  /* avoid signal from other modem */
+  if (strncmp(object_path, modem->path, strlen(modem->path)) != 0)
+    return;
 
   tapi_debug("");
 
@@ -1212,6 +1224,10 @@ static void _connman_context_actived_notify(GDBusConnection *connection,
   struct context_actived_noti noti;
 
   tapi_debug("%s", object_path);
+
+  /* avoid signal from other modem */
+  if (strncmp(object_path, modem->path, strlen(modem->path)) != 0)
+    return;
 
   noti.path = g_strdup(object_path);
   g_variant_get(parameters, "(sv)", &key, &val);
