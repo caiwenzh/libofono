@@ -90,7 +90,7 @@ void ofono_set_property(struct ofono_modem *modem, const char *iface,
 
   val = g_variant_new("(sv)", key, value);
   g_dbus_connection_call(modem->conn, OFONO_SERVICE, path, iface,
-      "SetProperty", val, NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+      "SetProperty", val, NULL, G_DBUS_CALL_FLAGS_NONE, 120000,
       NULL, on_response_common, cbd);
 }
 

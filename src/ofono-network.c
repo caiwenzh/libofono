@@ -464,7 +464,7 @@ EXPORT_API void ofono_network_register(struct ofono_modem *modem,
   char *path = g_strdup_printf("%s/operator/%s", modem->path, plmn);
   g_dbus_connection_call(modem->conn, OFONO_SERVICE, path,
       OFONO_NETWORK_OPERATOR_IFACE, "Register", NULL,
-      NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+      NULL, G_DBUS_CALL_FLAGS_NONE, 60000, NULL,
       on_response_common, cbd);
 
   g_free(path);
