@@ -657,8 +657,9 @@ static void _sim_status_notify(GDBusConnection *connection,
 
   g_variant_get(parameters, "(sv)", &key, &val);
 
-  if (g_strcmp0(key, "Present") == 0 ||
-  	g_strcmp0(key, "PinRequired") == 0 || g_strcmp0(key, "Retries") == 0) {
+  if (g_strcmp0(key, "Present") == 0 || g_strcmp0(key, "PinRequired") == 0 ||
+      g_strcmp0(key, "Retries") == 0 ||
+      g_strcmp0(key, "SubscriberIdentity") == 0) {
     ofono_sim_get_info(modem, &info);
     _notify(modem, &info.status, OFONO_NOTI_SIM_STATUS_CHANGED);
   }

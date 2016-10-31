@@ -331,8 +331,11 @@ EXPORT_API tapi_bool ofono_sim_get_info(struct ofono_modem *modem,
   info->status = SIM_STATUS_INITIALIZING;
   if (info->pin_required != PIN_LOCK_NONE)
     info->status = SIM_STATUS_LOCKED;
-  else if (info->retries[PIN_LOCK_SIM_PIN] != 0 || info->retries[PIN_LOCK_SIM_PUK] != 0)
-    info->status = SIM_STATUS_READY;
+  else if (info->retries[PIN_LOCK_SIM_PIN] != 0 || info->retries[PIN_LOCK_SIM_PUK] != 0) {
+    /* pending the SIM ready notification till IMSI has been obtained */
+    if (info->imsi[0] != '\0')
+      info->status = SIM_STATUS_READY;
+  }
 
   return TRUE;
 }
