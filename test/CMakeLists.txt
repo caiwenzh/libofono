@@ -13,6 +13,7 @@ SET(ofono_test_src
 	connman.c
 	sat.c
 	phonebook.c
+	netmon.c
 )
 
 ADD_EXECUTABLE(ofono_test ${ofono_test_src})

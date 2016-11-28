@@ -39,6 +39,7 @@ SET(SRCS
 	src/ofono-modem.c
 	src/ofono-sat.c
 	src/ofono-phonebook.c
+	src/ofono-netmon.c
 	src/common.c
    )
 

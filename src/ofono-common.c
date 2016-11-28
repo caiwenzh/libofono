@@ -64,6 +64,8 @@ static const struct ofono_api_map OFONO_API_MAPS[] = {
   {OFONO_API_PHONEBOOK, OFONO_PHONEBOOK_IFACE},
   {OFONO_API_ASN, OFONO_GNSS_IFACE},
   {OFONO_API_RADIO_SETTING, OFONO_RADIO_SETTINGS_IFACE},
+  {OFONO_API_NETMON, OFONO_NETMON_INTERFACE},
+  {OFONO_API_LTE, OFONO_LTE_INTERFACE},
   {0, NULL},
 };
 
@@ -1166,7 +1168,7 @@ static void _ussd_status_notify(GDBusConnection *connection,
   tapi_debug("");
 
   g_variant_get(parameters, "(sv)", &key, &var);
- 
+
   state = g_variant_get_string(var, NULL);
   if (g_strcmp0(state, "idle") == 0)
     status = SS_USSD_STATUS_IDLE;

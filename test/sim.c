@@ -115,11 +115,10 @@ static void test_sim_get_info()
 static void test_sim_io()
 {
   struct sim_io_req req;
-  int cmd, fid, p1, p2, p3;
   char content[1024];
 
   printf("please input cmd, file_id, p1, p2, p3 (sperate by comma):\n");
-  scanf("%d,%d,%d,%d,%d", &req.cmd, &req.fid, &req.p1, &req.p2, &req.p3);
+  scanf("%d,%d,%hhd,%hhd,%hhd", (int *)&req.cmd, &req.fid, &req.p1, &req.p2, &req.p3);
 
   req.data = "";
   if (req.cmd == 214 || req.cmd == 220) {

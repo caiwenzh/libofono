@@ -144,7 +144,7 @@ static void _get_registration_info(struct ofono_modem *modem,
       tapi_debug("lac: %X", info->lac);
     } else if (g_strcmp0(key, "CellId") == 0) {
       g_variant_get(var, "u", &info->cid);
-      tapi_debug("lac: %X", info->cid);
+      tapi_debug("cid: %X", info->cid);
     } else if (g_strcmp0(key, "Technology") == 0) {
       value = g_variant_get_string(var, NULL);
       info->act = ofono_str_to_tech(value);

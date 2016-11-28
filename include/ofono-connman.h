@@ -135,7 +135,7 @@ tapi_bool ofono_connman_get_context_info(struct ofono_modem *modem,
  *
  * Sync API, response data: struct str_list *, a list of pdp context object
  * paths, should free it by ofono_string_list_free.
- *  
+ *
  */
 tapi_bool ofono_connman_get_contexts(struct ofono_modem *modem,
       struct str_list **contexts);

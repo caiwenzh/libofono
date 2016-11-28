@@ -379,5 +379,5 @@ EXPORT_API void ofono_sim_io(struct ofono_modem *modem, struct sim_io_req *req,
   g_dbus_connection_call(modem->conn, OFONO_SERVICE, modem->path,
       OFONO_SIM_MANAGER_IFACE, "SIMIO", var,
       NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL,
-      _on_response_sim_io, cbd); 
+      _on_response_sim_io, cbd);
 }

@@ -115,6 +115,8 @@ enum ofono_api {
   OFONO_API_PHONEBOOK,
   OFONO_API_ASN,        /* Assisted Satellite Navigation  */
   OFONO_API_RADIO_SETTING, /* Radio Setting */
+  OFONO_API_NETMON, /* Network Moinitor */
+  OFONO_API_LTE, /* LTE */
 };
 
 typedef enum tapi_result {

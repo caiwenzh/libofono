@@ -245,7 +245,7 @@ EXPORT_API void ofono_connman_set_context(struct ofono_modem *modem,
   CHECK_PARAMETERS(modem && path && context, cb, user_data);
   tapi_debug("Path: %s", path);
 
-  iinfo = g_new0(struct set_context_interm_info, 1); 
+  iinfo = g_new0(struct set_context_interm_info, 1);
   memset(iinfo, 0, sizeof(struct set_context_interm_info));
   iinfo->path = g_strdup(path);
   if (context->apn)
