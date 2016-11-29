@@ -61,7 +61,8 @@ static void test_ss_set_call_waiting()
   int enabled;
 
   printf("please input call waiting setting (0 - disabled, else enabled):\n");
-  scanf("%d", &enabled);
+  if (scanf("%d", &enabled) == EOF)
+    return;
 
   ofono_ss_set_call_waiting(g_modem, enabled != 0, NULL, NULL);
 }
@@ -76,17 +77,21 @@ static void test_ss_set_call_forward()
   struct call_forward_setting setting;
 
   printf("please input call forwarding setting (0 - disabled, else enabled):\n");
-  scanf("%d", &setting.enable);
+  if (scanf("%d", &setting.enable) == EOF)
+    return;
 
   printf("please input call forwarding condiation (0 - Unconditional, 1 - Busy, 2 - No reply, 3 - Unreachable):\n");
-  scanf("%d", (int *)&setting.condition);
+  if (scanf("%d", (int *)&setting.condition) == EOF)
+    return;
 
   printf("please input call forwarding number:\n");
-  scanf("%s", setting.num);
+  if (scanf("%s", setting.num) == EOF)
+    return;
 
   if (setting.condition == SS_CF_CONDITION_CFNRY) {
     printf("please input call forwarding no reply timeout:\n");
-    scanf("%c", &setting.timeout);
+    if (scanf("%c", &setting.timeout) == EOF)
+      return;
   }
 
   ofono_ss_set_call_forward(g_modem, &setting, NULL, NULL);
@@ -104,14 +109,17 @@ static void test_ss_set_call_barring()
   char pwd[64];
 
   printf("please input call barring setting (0 - disabled, else enabled):\n");
-  scanf("%d", &enabled);
+  if (scanf("%d", &enabled) == EOF)
+    return;
 
   printf("please input call barring type (1 - All Outgoing, 2 - International Outgoing, 3 - Except home,\
     4 - All Incoming, 5 - Incoming when roam, 6 - All, 7 - All Outgoing, 8 - All Incoming):\n");
-  scanf("%d", &type);
+  if (scanf("%d", &type) == EOF)
+    return;
 
   printf("please input call barring password:\n");
-  scanf("%s", pwd);
+  if (scanf("%s", pwd) == EOF)
+    return;
 
   ofono_ss_set_call_barring(g_modem, enabled != 0,
         (enum call_barring_type)type, pwd, NULL, NULL);
@@ -123,10 +131,12 @@ static void test_ss_change_barring_password()
   char new_pwd[64];
 
   printf("please input old password:\n");
-  scanf("%s", pwd);
+  if (scanf("%s", pwd) == EOF)
+    return;
 
   printf("please input new password:\n");
-  scanf("%s", new_pwd);
+  if (scanf("%s", new_pwd) == EOF)
+    return;
 
   ofono_ss_change_barring_password(g_modem, pwd, new_pwd, NULL, NULL);
 }
@@ -146,7 +156,8 @@ static void test_ss_set_clir()
   int status;
 
   printf("please input call line restriction setting(0 - Default, 1 - enabled, 2 - disable):\n");
-  scanf("%d", &status);
+  if (scanf("%d", &status) == EOF)
+    return;
 
   ofono_ss_set_clir(g_modem, (enum clir_dev_status)status, NULL, NULL);
 }
@@ -156,7 +167,8 @@ static void test_ss_initiate_ussd_request()
   char ussd[256];
 
   printf("please input USSD string:\n");
-  scanf("%s", ussd);
+  if (scanf("%s", ussd) == EOF)
+    return;
 
   ofono_ss_initiate_ussd_request(g_modem, ussd, NULL, NULL);
 }
@@ -166,7 +178,8 @@ static void test_ss_send_ussd_response()
   char ussd[256];
 
   printf("please input USSD string:\n");
-  scanf("%s", ussd);
+  if (scanf("%s", ussd) == EOF)
+    return;
 
   ofono_ss_send_ussd_response(g_modem, ussd, NULL, NULL);
 }

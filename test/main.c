@@ -97,6 +97,7 @@ void show_menu(struct menu_info *menu)
 void *menu_thread(void *user_data)
 {
   show_menu(main_menu);
+  return NULL;
 }
 
 static void on_modems_changed(const char *modem, tapi_bool add)

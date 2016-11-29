@@ -81,7 +81,8 @@ static void test_network_set_mode()
   int mode;
 
   printf("please input network mode (1 - auto, 2 - 2G, 4 - 3G, 8 - 4G):\n");
-  scanf("%d", &mode);
+  if (scanf("%d", &mode) == EOF)
+    return;
 
   ofono_network_set_mode(g_modem, (enum network_mode)mode, NULL, NULL);
 }
@@ -91,7 +92,8 @@ static void test_network_register()
   char plmn[256];
 
   printf("please input plmn (MCCMNC):\n");
-  scanf("%s", plmn);
+  if (scanf("%s", plmn) == EOF)
+    return;
 
   ofono_network_register(g_modem, plmn, NULL, NULL);
 }

@@ -600,7 +600,6 @@ static void _network_signal_strength_notify(GDBusConnection *connection,
   struct ofono_modem *modem = user_data;
   GVariant *var;
   char *key;
-  struct registration_info info;
   unsigned signal;
 
   tapi_debug("");
@@ -625,7 +624,6 @@ static void _network_status_notify(GDBusConnection *connection,
   GVariant *var;
   char *key;
   struct registration_info info;
-  unsigned signal;
 
   tapi_debug("");
 

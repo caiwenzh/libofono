@@ -90,10 +90,12 @@ static void test_call_dial()
   enum clir_dev_status cds;
 
   printf("please input number:\n");
-  scanf("%s", num);
+  if(scanf("%s", num) == EOF)
+      return;
 
   printf("please input CLIR setting (0 - disable, else enable):\n");
-  scanf("%d", &clir);
+  if(scanf("%d", &clir) == EOF)
+      return;
 
   if (clir == 0)
     cds = SS_CLIR_DEV_STATUS_DISABLED;
@@ -113,7 +115,8 @@ static void test_call_release_specific()
   int call_id;
 
   printf("please input the id of the call to release:\n");
-  scanf("%d", &call_id);
+  if(scanf("%d", &call_id) == EOF)
+      return;
 
   ofono_call_release_specific(g_modem, call_id, NULL, NULL);
 }
@@ -153,7 +156,8 @@ static void test_call_deflect()
   char number[64];
 
   printf("please input the destination number:\n");
-  scanf("%s", number);
+  if (scanf("%s", number) == EOF)
+      return;
 
   ofono_call_deflect(g_modem, number, NULL, NULL);
 }
@@ -173,7 +177,8 @@ static void test_call_private_chat()
   int call_id;
 
   printf("please input the id of the call will private chat with:\n");
-  scanf("%d", &call_id);
+  if(scanf("%d", &call_id) == EOF)
+      return;
 
   ofono_call_private_chat(g_modem, call_id, NULL, NULL);
 }
@@ -183,7 +188,8 @@ static void test_call_send_tones()
   char tones[64];
 
   printf("please input the tones to send:\n");
-  scanf("%s", tones);
+  if (scanf("%s", tones) == EOF)
+      return;
 
   ofono_call_send_tones(g_modem, tones, NULL, NULL);
 }
@@ -201,7 +207,8 @@ static void test_call_get_call_info()
   int call_id;
 
   printf("please input call id:\n");
-  scanf("%d", &call_id);
+  if (scanf("%d", &call_id) == EOF)
+      return;
 
   ofono_call_get_call_info(g_modem, call_id, &call_info);
 }
@@ -218,7 +225,8 @@ static void test_call_set_mute_status()
   int mute;
 
   printf("please input mute status (0 - unmute, else mute):\n");
-  scanf("%d", &mute);
+  if (scanf("%d", &mute) == EOF)
+      return;
 
   ofono_call_set_mute_status(g_modem, mute != 0, NULL, NULL);
 }
@@ -235,7 +243,8 @@ static void test_call_set_speaker_volume()
   int vol;
 
   printf("please input volume value [0 - 100]:\n");
-  scanf("%d", &vol);
+  if (scanf("%d", &vol) == EOF)
+      return;
 
   ofono_call_set_speaker_volume(g_modem, (unsigned char)vol, NULL, NULL);
 }
@@ -252,7 +261,8 @@ static void test_call_set_microphone_volume()
   int vol;
 
   printf("please input volume value [0 - 100]:\n");
-  scanf("%d", &vol);
+  if (scanf("%d", &vol) == EOF)
+      return;
 
   ofono_call_set_microphone_volume(g_modem, (unsigned char)vol, NULL, NULL);
 }
@@ -262,7 +272,8 @@ static void test_call_set_volume_by_alsa()
   int vol;
 
   printf("please input volume value [0 - 100]:\n");
-  scanf("%d", &vol);
+  if (scanf("%d", &vol) == EOF)
+      return;
 
   ofono_call_set_volume_by_alsa(g_modem, (unsigned char)vol, NULL, NULL);
 }
@@ -275,7 +286,8 @@ static void test_call_set_sound_path()
   printf("<** Note: should cowork with application layer, it requires setting"
   "audio path through audio system too. **>\n");
   printf("please input sound path (0 - speaker, else earpiece):\n");
-  scanf("%d", &i_path);
+  if (scanf("%d", &i_path) == EOF)
+      return;
 
   if (i_path == 0)
     path = "speaker";

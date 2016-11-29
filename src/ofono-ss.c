@@ -33,6 +33,9 @@ static tapi_bool _check_call_forwarding_setting(struct call_forward_setting *s)
   if (s->enable == TRUE && strlen(s->num) == 0)
     return FALSE;
 
+  if (s->enable == FALSE)
+    return TRUE;
+
   if (s->condition == SS_CF_CONDITION_CFNRY &&
     (s->timeout > 30 || s->timeout < 1))
     return FALSE;

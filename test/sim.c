@@ -44,7 +44,8 @@ static void test_sim_enable_pin()
   char pin[64];
 
   printf("please input pin:\n");
-  scanf("%s", pin);
+  if (scanf("%s", pin) == EOF)
+    return;
 
   ofono_sim_enable_pin(g_modem, PIN_LOCK_SIM_PIN, pin, NULL, NULL);
 }
@@ -54,7 +55,8 @@ static void test_sim_disable_pin()
   char pin[64];
 
   printf("please input pin:\n");
-  scanf("%s", pin);
+  if (scanf("%s", pin) == EOF)
+    return;
 
   ofono_sim_disable_pin(g_modem, PIN_LOCK_SIM_PIN, pin, NULL, NULL);
 }
@@ -64,7 +66,8 @@ static void test_sim_enter_pin()
   char pin[64];
 
   printf("please input pin:\n");
-  scanf("%s", pin);
+  if (scanf("%s", pin) == EOF)
+    return;
 
   ofono_sim_enter_pin(g_modem, PIN_LOCK_SIM_PIN, pin, NULL, NULL);
 }
@@ -76,13 +79,16 @@ static void test_sim_reset_pin()
   char new_pin[64];
 
   printf("please input SIM type(1 - pin, 4 - pin2, 9 - puk, 11 - puk2):\n");
-  scanf("%d", &type);
+  if (scanf("%d", &type) == EOF)
+    return;
 
   printf("please input puk:\n");
-  scanf("%s", puk);
+  if (scanf("%s", puk) == EOF)
+    return;
 
   printf("please input new pin:\n");
-  scanf("%s", new_pin);
+  if(scanf("%s", new_pin) == EOF)
+    return;
 
   ofono_sim_reset_pin(g_modem, (enum pin_lock_type)type, puk, new_pin, NULL, NULL);
 }
@@ -94,13 +100,16 @@ static void test_sim_change_pin()
   char new_pin[64];
 
   printf("please input SIM type(1 - pin, 4 - pin2):\n");
-  scanf("%d", &type);
+  if (scanf("%d", &type) == EOF)
+    return;
 
   printf("please input old pin:\n");
-  scanf("%s", pin);
+  if (scanf("%s", pin) == EOF)
+    return;
 
   printf("please input new pin:\n");
-  scanf("%s", new_pin);
+  if (scanf("%s", new_pin) == EOF)
+    return;
 
   ofono_sim_change_pin(g_modem, (enum pin_lock_type)type, pin, new_pin, NULL, NULL);
 }
@@ -118,12 +127,14 @@ static void test_sim_io()
   char content[1024];
 
   printf("please input cmd, file_id, p1, p2, p3 (sperate by comma):\n");
-  scanf("%d,%d,%hhd,%hhd,%hhd", (int *)&req.cmd, &req.fid, &req.p1, &req.p2, &req.p3);
+  if (scanf("%d,%d,%hhd,%hhd,%hhd", (int *)&req.cmd, &req.fid, &req.p1, &req.p2, &req.p3) == EOF)
+    return;
 
   req.data = "";
   if (req.cmd == 214 || req.cmd == 220) {
   	 printf("please input content to write (hex):\n");
-     scanf("%s", content);
+     if (scanf("%s", content) == EOF)
+       return;
 	 req.data = content;
   }
 

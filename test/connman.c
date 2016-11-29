@@ -56,7 +56,8 @@ static void test_connman_add_context()
   int type;
 
   printf("please input PDP context type (1 - mms, 2 - internet, 3 - wap, 4 - ims):\n");
-  scanf("%d", &type);
+  if (scanf("%d", &type) == EOF)
+      return;
 
   ofono_connman_add_context(g_modem, (enum context_type)type, NULL, NULL);
 }
@@ -66,7 +67,8 @@ static void test_connman_remove_context()
   char path[256];
 
   printf("please input PDP context object path (/<modem_name>/context<id>):\n");
-  scanf("%s", path);
+  if (scanf("%s", path) == EOF)
+      return;
 
   ofono_connman_remove_context(g_modem, path, NULL, NULL);
 }
@@ -78,10 +80,12 @@ static void test_connman_set_context()
   struct pdp_context context;
 
   printf("please input PDP context object path (/<modem_name>/context<id>):\n");
-  scanf("%s", path);
+  if (scanf("%s", path) == EOF)
+    return;
 
   printf("please input APN:\n");
-  scanf("%s", apn);
+  if (scanf("%s", apn) == EOF)
+    return;
 
   memset(&context, 0, sizeof(context));
   context.apn = apn;
@@ -96,7 +100,8 @@ static void test_connman_get_context_info()
   char path[256];
 
   printf("please input PDP context object path (/<modem_name>/context<id>):\n");
-  scanf("%s", path);
+  if (scanf("%s", path) == EOF)
+    return;
   ofono_connman_get_context_info(g_modem, path, &info);
 }
 
@@ -113,7 +118,8 @@ static void test_connman_activate_context()
   char path[256];
 
   printf("please input PDP context object path (/<modem_name>/context<id>):\n");
-  scanf("%s", path);
+  if (scanf("%s", path) == EOF)
+    return;
 
   ofono_connman_activate_context(g_modem, path, NULL, NULL);
 }
@@ -123,7 +129,8 @@ static void test_connman_deactivate_context()
   char path[256];
 
   printf("please input PDP context object path (/<modem_name>/context<id>):\n");
-  scanf("%s", path);
+  if (scanf("%s", path) == EOF)
+    return;
 
   ofono_connman_deactivate_context(g_modem, path, NULL, NULL);
 }
@@ -144,7 +151,8 @@ static void test_connman_set_powered()
   int powered;
 
   printf("please input connman powered (0 - powered off, else powered on):\n");
-  scanf("%d", &powered);
+  if (scanf("%d", &powered) == EOF)
+    return;
 
   ofono_connman_set_powered(g_modem, powered != 0, NULL, NULL);
 }
@@ -161,7 +169,8 @@ static void test_connman_set_roaming_allowed()
   int allowed;
 
   printf("please input connman roaming setting (0 - not allowed, else allowed):\n");
-  scanf("%d", &allowed);
+  if (scanf("%d", &allowed) == EOF)
+    return;
 
   ofono_connman_set_roaming_allowed(g_modem, allowed != 0, NULL, NULL);
 }

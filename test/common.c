@@ -54,7 +54,8 @@ static void test_modem_init()
 {
   char buf[128];
   printf("please input modem path:\n");
-  scanf("%s", buf);
+  if (scanf("%s", buf) == EOF)
+      return;
 
   if (g_modem != NULL)
     ofono_modem_deinit(g_modem);
@@ -82,7 +83,8 @@ static void test_reg_notfication_callback()
   }
 
   printf("please input notification id (0 for all):\n");
-  scanf("%d", &noti);
+  if (scanf("%d", &noti) == EOF)
+      return;
 
   if (noti == 0) {
     int i = 0;
@@ -108,7 +110,8 @@ static void test_un_notfication_callback()
   }
 
   printf("please input notification id (0 for all):\n");
-  scanf("%d", &noti);
+  if (scanf("%d", &noti) == EOF)
+      return;
 
   if (noti == 0) {
     int i = 0;
@@ -124,20 +127,21 @@ static void test_un_notfication_callback()
 
 static void test_has_interface()
 {
-    unsigned int api;
+  unsigned int api;
 
-    if (g_modem == NULL) {
-      printf("please init modem first\n");
-      return;
-    }
+  if (g_modem == NULL) {
+    printf("please init modem first\n");
+    return;
+  }
 
-    printf("please input API id:\n");
-    scanf("%d", &api);
+  printf("please input API id:\n");
+  if (scanf("%d", &api) == EOF)
+    return;
 
-    if ( ofono_has_interface(g_modem, api) )
-      printf("API (%d) exists\n", api);
-    else
-      printf("API (%d) dosen't exist\n", api);
+  if ( ofono_has_interface(g_modem, api) )
+    printf("API (%d) exists\n", api);
+  else
+    printf("API (%d) dosen't exist\n", api);
 }
 
 static void test_deinit()

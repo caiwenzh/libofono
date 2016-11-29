@@ -45,7 +45,8 @@ static void test_modem_set_online()
   int online;
 
   printf("please input online setting (0 - offline, else online):\n");
-  scanf("%d", &online);
+  if (scanf("%d", &online) == EOF)
+    return;
 
   ofono_modem_set_online(g_modem, online != 0, NULL, NULL);
 }
@@ -60,7 +61,8 @@ static void test_modem_set_powered()
   int powered;
 
   printf("please input powered setting (0 - power off, else powered on):\n");
-  scanf("%d", &powered);
+  if (scanf("%d", &powered) == EOF)
+    return;
 
   ofono_modem_set_powered(g_modem, powered != 0, NULL, NULL);
 }

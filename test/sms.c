@@ -51,7 +51,8 @@ static void test_sms_set_sca()
   char sca[128];
 
   printf("please input SMS service center address:\n");
-  scanf("%s", sca);
+  if (scanf("%s", sca) == EOF)
+    return;
 
   ofono_sms_set_sca(g_modem, sca, NULL, NULL);
 }
@@ -66,7 +67,8 @@ static void test_sms_set_delivery_report()
   int report;
 
   printf("please input SMS delivery report setting (0 - disabled, else enable):\n");
-  scanf("%d", &report);
+  if (scanf("%d", &report) == EOF)
+    return;
 
   ofono_sms_set_delivery_report(g_modem, report != 0, NULL, NULL);
 }
@@ -77,7 +79,8 @@ static void test_sms_send_sms()
   char text[256];
 
   printf("please input number and SMS content (e.g:10010 hi):\n");
-  scanf("%s %s", num, text);
+  if (scanf("%s %s", num, text) == EOF)
+    return;
 
   ofono_sms_send_sms(g_modem, num, text, NULL, NULL);
 }
@@ -92,7 +95,8 @@ static void test_sms_set_cbs_powered()
   int powered;
 
   printf("please input Cell broadcast message setting (0 - disabled, else enable):\n");
-  scanf("%d", &powered);
+  if (scanf("%d", &powered) == EOF)
+    return;
 
   ofono_sms_set_cbs_powered(g_modem, powered != 0, NULL, NULL);
 }
@@ -102,7 +106,8 @@ static void test_sms_set_cbs_topics()
   char topics[128];
 
   printf("please input Cell broadcast message topics (e.g: 0,1,5,320-478,922 ):\n");
-  scanf("%s", topics);
+  if (scanf("%s", topics) == EOF)
+    return;
 
   ofono_sms_set_cbs_topics(g_modem, topics, NULL, NULL);
 }
